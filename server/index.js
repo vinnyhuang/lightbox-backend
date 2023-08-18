@@ -31,12 +31,12 @@ const requestGPT = async (history, newMessage, res) => {
     const completion_text = completion.data.choices[0].message.content;
     return [completion_text, [...history, [newMessage, completion_text]]];
   } catch (error) {
-    console.log(error);
+    console.error(error);
     if (error.response) {
-      console.log(error.response.status);
-      console.log(error.response.data);
+      console.error(error.response.status);
+      console.error(error.response.data);
     } else {
-      console.log(error.message);
+      console.error(error.message);
     }
     res.send(JSON.stringify({ message: data.message }));
   }
@@ -45,27 +45,23 @@ const requestGPT = async (history, newMessage, res) => {
 const app = express();
 app.use(express.json());
 
-app.get("/api", (req, res) => {
+app.get("/api", (_, res) => {
   res.json({ message: "Hello from your friend, server!" });
 });
 
 app.post("/gpt-chat", async (req, res) => {
   const data = req.body;
   const { history, message } = data;
-  console.log('message', message);
 
   const [responseText, newHistory] = await requestGPT(history, message, res);
-  console.log('responseText', responseText);
   res.send(JSON.stringify({ ...data, message: responseText, history: newHistory }));
 });
 
 app.post("/google-image-search", async (req, res) => {
   const data = req.body;
   const { itemNames, searchTerms } = data;
-  console.log('message', searchTerms);
 
   const responses = await Promise.all(searchTerms.map(searchTerm => google.search(searchTerm, { page: 1 })));
-  console.log('first response', responses[0])
   const results = Object.fromEntries(
     itemNames.map((itemName, i) => ([
       itemName,
