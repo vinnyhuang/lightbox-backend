@@ -1,4 +1,5 @@
 const express = require("express");
+const imageSearch = require('image-search-google');
 const { Configuration, OpenAIApi } = require("openai");
 require("dotenv").config();
 
@@ -6,6 +7,8 @@ const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
 });
 const openai = new OpenAIApi(configuration);
+
+const google = new imageSearch(process.env.GOOGLE_CUSTOM_SEARCH_ID, process.env.GOOGLE_API_KEY);
 
 const PORT = process.env.PORT || 3001;
 
@@ -49,10 +52,27 @@ app.get("/api", (req, res) => {
 app.post("/gpt-chat", async (req, res) => {
   const data = req.body;
   const { history, message } = data;
+  console.log('message', message);
 
   const [responseText, newHistory] = await requestGPT(history, message, res);
   console.log('responseText', responseText);
   res.send(JSON.stringify({ ...data, message: responseText, history: newHistory }));
+});
+
+app.post("/google-image-search", async (req, res) => {
+  const data = req.body;
+  const { itemNames, searchTerms } = data;
+  console.log('message', searchTerms);
+
+  const responses = await Promise.all(searchTerms.map(searchTerm => google.search(searchTerm, { page: 1 })));
+  console.log('first response', responses[0])
+  const results = Object.fromEntries(
+    itemNames.map((itemName, i) => ([
+      itemName,
+      responses[i].slice(0, 3).map(item => item.url),
+    ]))
+  )
+  res.send(JSON.stringify({ images: results }));
 });
 
 app.listen(PORT, () => {
