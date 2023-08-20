@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require('cors');
 const imageSearch = require('image-search-google');
 const { Configuration, OpenAIApi } = require("openai");
 require("dotenv").config();
@@ -44,6 +45,15 @@ const requestGPT = async (history, newMessage, res) => {
 
 const app = express();
 app.use(express.json());
+if (process.env.NODE_ENV !== 'production') {
+  app.use(cors());
+} else {
+  const corsOptions = {
+      origin: 'https://lightbox-frontend.onrender.com',
+      optionsSuccessStatus: 200
+  };
+  app.use(cors(corsOptions));
+}
 
 app.get("/api", (_, res) => {
   res.json({ message: "Hello from your friend, server!" });
